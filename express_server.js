@@ -14,10 +14,10 @@ const urlDatabase = {
 };
 
 const generateRandomString = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
   
-  while (randomString.length < 6) {
+  while (randomString.length <= 6) {
     randomString += chars[Math.floor(Math.random() * chars.length)];
   }
 
@@ -61,14 +61,20 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL)
 })
 
+// Add new URL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString()
   console.log(req.body.longURL)
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-  };
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  urlDatabase[shortURL] = req.body.longURL
+  res.redirect("/urls/new");
 });
+
+//delete URL and redirect back
+app.post("/urls/:shortURL/delete", (req, res) => {
+  let shortURL = req.params.shortURL
+  delete urlDatabase[shortURL]
+  res.redirect("/urls")
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`)
