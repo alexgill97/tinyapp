@@ -2,9 +2,12 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 
 
 app.use(bodyParser.urlencoded({extended: true}));
+
+app.use(cookieParser())
 
 app.set("view engine", "ejs");
 
@@ -64,7 +67,6 @@ app.get("/u/:shortURL", (req, res) => {
 // Add new URL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString()
-  console.log(req.body.longURL)
   urlDatabase[shortURL] = req.body.longURL
   res.redirect("/urls/new");
 });
@@ -78,8 +80,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Edit URL and redirect back
 app.post("/urls/:id", (req, res) => {
+  const id = req.params.id
+  urlDatabase[id] = req.body.updatedURL
+})
+
+//Login handler
+app.post("/login", (req, res) => {
   console.log(req.body)
-  //urlDatabase[]
+  res.cookie = ('username', req.body.username)
+  res.redirect("/urls")
 })
 
 app.listen(PORT, () => {
