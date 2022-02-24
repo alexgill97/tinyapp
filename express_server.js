@@ -35,7 +35,7 @@ const findUserEmail = (email, database) => {
       return database[user];
     }
   }
-  return undefined;
+  return false;
 };
 
 app.get("/", (req, res) => {
@@ -88,12 +88,6 @@ app.post("/urls/:id", (req, res) => {
   urlDatabase[id] = req.body.updatedURL
 })
 
-//Login handler
-app.post("/login", (req, res) => {
-  res.cookie('user', req.body.user)
-  res.redirect("/urls")
-})
-
 //Logout handler
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id')
@@ -127,6 +121,29 @@ app.post("/register", (req, res) => {
     res.send('<h2>400  Bad Request<br>Please fill out the email and password fields.</h2>')
   }
 })
+
+//GET login page
+app.get('/login', (req, res) => {
+  let templateVars = {user: users[req.cookies['user_id']]};
+  res.render('urls_login', templateVars);
+});
+
+// login functionality
+app.post('/login', (req, res) => {
+  const user = findUserEmail(req.body.email, users);
+  if (user) {
+    if (req.body.password === user.password) {
+      res.cookie('user_id', user.userID);
+      res.redirect('/urls');
+    } else {
+      res.statusCode = 403;
+      res.send('<h2>403 Forbidden<br>You entered the wrong password.</h2>')
+    }
+  } else {
+    res.statusCode = 403;
+    res.send('<h2>403 Forbidden<br>This email address is not registered.</h2>')
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`)

@@ -12,10 +12,17 @@
   <%- include('partials/_header') %>
 </Header>
 <body>
+  <main style="margin: 1em;">
+  <h1>Create Account</h1>
   <form action="/register" method="POST">
-    <input type="email" name="email" placeholder="Email">
-    <input type="password" name="password" placeholder="Password">
-    <button>Register</button>
+    <div class="form-group mb-2">
+      <label for="email">Email address</label>
+      <input class="form-control mb-3" style="width: 300px" type="email" name="email" placeholder="Email">
+      <label for="password">Password</label>
+      <input class="form-control mb-3" style="width: 300px" type="password" name="password" placeholder="Password">
+      <button class="btn btn-primary">Register</button>
+    </div>
   </form>
+  </main>
 </body>
 </html>
