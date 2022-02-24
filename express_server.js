@@ -2,14 +2,17 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session")
 const bcrypt = require("bcryptjs")
 const { generateRandomString, userEmail, userURLs } = require("./helper_functions");
 
 // Middleware
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
 app.set("view engine", "ejs");
+app.use(cookieSession({
+  name: 'session',
+  keys: ["user_ID"]
+}))
 
 // Stores
 const urlDatabase = {};
@@ -35,7 +38,7 @@ app.get("/urls.json", (req, res) => {
 
 //URL list page (home)
 app.get("/urls", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session["user_ID"];
   if (!users[userID]) {
     res.redirect("/login");
   }
@@ -48,7 +51,7 @@ app.get("/urls", (req, res) => {
 
 //Page for creating new URL
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session["user_ID"];
   if (!users[userID]) {
     res.redirect("/login");
   }
@@ -58,7 +61,7 @@ app.get("/urls/new", (req, res) => {
 
 //Page showing specific URL
 app.get("/urls/:shortURL", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session["user_ID"];
   const usersURLs = userURLs(userID, urlDatabase);
   let templateVars = { urls: usersURLs, user: users[userID], shortURL: req.params.shortURL, longURL: req.body.longURL };
   res.render('urls_show', templateVars);
@@ -77,12 +80,12 @@ app.get("/u/:id", (req, res) => {
 
 // Add new URL functionality
 app.post("/urls", (req, res) => {
-  const userID = req.cookies["user_id"]
+  const userID = req.session["user_ID"]
   if (userID) {
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
-      id: req.cookies['user_id']
+      id: req.session["user_ID"]
   };
   }
   res.redirect("/urls");
@@ -91,7 +94,7 @@ app.post("/urls", (req, res) => {
 //Edit URL and redirect back
 app.post("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  if (req.cookies['user_id'] === urlDatabase[shortURL].id) {
+  if (req.session["user_ID"] === urlDatabase[shortURL].id) {
     urlDatabase[userID].longURL = req.body.updatedURL;
     return res.redirect("/urls")
   }
@@ -102,7 +105,7 @@ app.post("/urls/:shortURL", (req, res) => {
 //delete URL and redirect back
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
-  if (req.cookies['user_id'] === urlDatabase[shortURL].id) {
+  if (req.session["user_ID"] === urlDatabase[shortURL].id) {
     delete urlDatabase[shortURL];
   }
   res.redirect("/urls");
@@ -110,13 +113,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //GET login page
 app.get('/login', (req, res) => {
-  const templateVars = {user: users[req.cookies['user_id']]};
+  const templateVars = {user: users[req.session["user_ID"]]};
   res.render('urls_login', templateVars);
 });
 
 //Registration page GET & Render
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies['user_id']] };
+  const templateVars = { user: users[req.session["user_ID"]] };
   res.render("urls_registration", templateVars);
 });
 
@@ -126,7 +129,7 @@ app.post('/login', (req, res) => {
   console.log(user)
   if (user) {
     if (bcrypt.compareSync(req.body.password, user.password)) {
-      res.cookie('user_id', user.id);
+      req.session['user_ID'] = user.id;
       res.redirect('/urls');
     } else {
       res.statusCode = 403;
@@ -148,7 +151,7 @@ app.post("/register", (req, res) => {
         email: req.body.email,
         password: bcrypt.hashSync(req.body.password, 10)
       };
-      res.cookie('user_id', userID);
+      req.session['user_ID'] = userID;
       res.redirect('/urls');
     } else {
       res.statusCode = 400;
@@ -162,7 +165,7 @@ app.post("/register", (req, res) => {
 
 //Logout handler
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect("/login");
 });
 
