@@ -50,7 +50,7 @@ app.get("/urls/new", (req, res) => {
 })
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL, username: req.cookies["username"] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL,user: users[req.cookies['user_id']] };
   res.render("urls_show", templateVars);
 })
 
@@ -82,19 +82,19 @@ app.post("/urls/:id", (req, res) => {
 
 //Login handler
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username)
+  res.cookie('user', req.body.user)
   res.redirect("/urls")
 })
 
 //Logout handler
 app.post("/logout", (req, res) => {
-  res.clearCookie('username')
+  res.clearCookie('user_id')
   res.redirect("/urls")
 })
 
 //Registration page GET & Render
 app.get("/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"] }
+  const templateVars = { user: users[req.cookies['user_id']] }
   res.render("urls_registration", templateVars)
 })
 
