@@ -4,7 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session")
 const bcrypt = require("bcryptjs")
-const { generateRandomString, userEmail, userURLs } = require("./helper_functions");
+const { generateRandomString, getUserByEmail, userURLs } = require("./helpers");
 
 // Middleware
 app.use(bodyParser.urlencoded({extended: true}));
@@ -39,24 +39,25 @@ app.get("/urls.json", (req, res) => {
 //URL list page (home)
 app.get("/urls", (req, res) => {
   const userID = req.session["user_ID"];
-  if (!users[userID]) {
-    res.redirect("/login");
+  if (users[userID]) {
+    const usersURLs = userURLs(userID, urlDatabase);
+    console.log(usersURLs)
+    const templateVars = { urls: usersURLs, user: users[userID] };
+  
+    res.render('urls_index', templateVars);
   }
-  const usersURLs = userURLs(userID, urlDatabase);
-  console.log(usersURLs)
-  const templateVars = { urls: usersURLs, user: users[userID] };
+  res.redirect("/login");
 
-  res.render('urls_index', templateVars);
 });
 
 //Page for creating new URL
 app.get("/urls/new", (req, res) => {
   const userID = req.session["user_ID"];
-  if (!users[userID]) {
-    res.redirect("/login");
+  if (users[userID]) {
+    let templateVars = {user: users[userID]};
+    res.render('urls_new', templateVars);
   }
-  let templateVars = {user: users[userID]};
-  res.render('urls_new', templateVars);
+  res.redirect("/login");
 });
 
 //Page showing specific URL
@@ -125,7 +126,7 @@ app.get("/register", (req, res) => {
 
 // login handler
 app.post('/login', (req, res) => {
-  const user = userEmail(req.body.email, users);
+  const user = getUserByEmail(req.body.email, users);
   console.log(user)
   if (user) {
     if (bcrypt.compareSync(req.body.password, user.password)) {
@@ -144,7 +145,7 @@ app.post('/login', (req, res) => {
 //Registration handler
 app.post("/register", (req, res) => {
   if (req.body.email && req.body.password) {
-    if (!userEmail(req.body.email, users)) {
+    if (!getUserByEmail(req.body.email, users)) {
       const userID = generateRandomString();
       users[userID] = {
         id: userID,
