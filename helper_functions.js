@@ -26,7 +26,7 @@ const userURLs = (email, database) => {
       urls[shortURL] = database[shortURL];
     }
   }
-  return urls
-}
+  return urls;
+};
 
 module.exports = { generateRandomString, userEmail, userURLs };

@@ -3,16 +3,23 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const { generateRandomString, userEmail, userURLs } = require("./helper_functions")
+const bcrypt = require("bcryptjs")
+const { generateRandomString, userEmail, userURLs } = require("./helper_functions");
 
 // Middleware
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser())
+app.use(cookieParser());
 app.set("view engine", "ejs");
 
 // Stores
 const urlDatabase = {};
-const users = {}
+const users = {
+  user1: {
+    id: 'Adam',
+    email: 'a@a.com',
+    password: bcrypt.hashSync('test', 10)
+  }
+};
 
 // END POINTS
 
@@ -29,7 +36,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const userID = req.cookies['user_id'];
   if (!users[userID]) {
-    res.redirect("/login")
+    res.redirect("/login");
   }
   const usersURLs = userURLs(userID, urlDatabase);
   const templateVars = { urls: usersURLs, user: users[userID] };
@@ -41,11 +48,11 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = req.cookies['user_id'];
   if (!users[userID]) {
-    res.redirect("/login")
+    res.redirect("/login");
   }
-    let templateVars = {user: users[userID]};
-    res.render('urls_new', templateVars);
-})
+  let templateVars = {user: users[userID]};
+  res.render('urls_new', templateVars);
+});
 
 //Page showing specific URL
 app.get("/urls/:shortURL", (req, res) => {
@@ -53,7 +60,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const usersURLs = userURLs(userID, urlDatabase);
   let templateVars = { urls: usersURLs, user: users[userID], shortURL: req.params.shortURL, longURL: req.body.longURL };
   res.render('urls_show', templateVars);
-})
+});
 
 // Redirect short URL to long
 app.get("/u/:id", (req, res) => {
@@ -62,13 +69,13 @@ app.get("/u/:id", (req, res) => {
     res.redirect(`https://${longURL}`);
   } else {
     res.statusCode = 404;
-    res.send('<h2>404 Not Found<br>This short URL does not exist.</h2>')
+    res.send('<h2>404 Not Found<br>This short URL does not exist.</h2>');
   }
-})
+});
 
 // Add new URL functionality
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString()
+  const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
     userID: req.cookies['user_id']
@@ -78,22 +85,22 @@ app.post("/urls", (req, res) => {
 
 //Edit URL and redirect back
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id
+  const id = req.params.id;
   if (req.cookies['user_id'] === urlDatabase[id].userID) {
     urlDatabase[id].longURL = req.body.updatedURL;
   }
 
   res.redirect(`/urls/${id}`);
-})
+});
 
 //delete URL and redirect back
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL
+  const shortURL = req.params.shortURL;
   if (req.cookies['user_id'] === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
   }
-  res.redirect("/urls")
-})
+  res.redirect("/urls");
+});
 
 //GET login page
 app.get('/login', (req, res) => {
@@ -103,24 +110,24 @@ app.get('/login', (req, res) => {
 
 //Registration page GET & Render
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies['user_id']] }
-  res.render("urls_registration", templateVars)
-})
+  const templateVars = { user: users[req.cookies['user_id']] };
+  res.render("urls_registration", templateVars);
+});
 
 // login handler
 app.post('/login', (req, res) => {
   const user = userEmail(req.body.email, users);
   if (user) {
-    if (req.body.password === user.password) {
+    if (bcrypt.compareSync(req.body.password, user.password)) {
       res.cookie('user_id', user.userID);
       res.redirect('/urls');
     } else {
       res.statusCode = 403;
-      res.send('<h2>403 Forbidden<br>You entered the wrong password.</h2>')
+      res.send('<h2>403 Forbidden<br>You entered the wrong password.</h2>');
     }
   } else {
     res.statusCode = 403;
-    res.send('<h2>403 Forbidden<br>This email address is not registered.</h2>')
+    res.send('<h2>403 Forbidden<br>This email address is not registered.</h2>');
   }
 });
 
@@ -132,26 +139,26 @@ app.post("/register", (req, res) => {
       users[userID] = {
         userID,
         email: req.body.email,
-        password: req.body.password
-      }
+        password: bcrypt.hashSync(req.body.password, 10)
+      };
       res.cookie('user_id', userID);
       res.redirect('/urls');
     } else {
       res.statusCode = 400;
-      res.send('<h2>400  Bad Request<br>Email already registered.</h2>')
+      res.send('<h2>400  Bad Request<br>Email already registered.</h2>');
     }
   } else {
     res.statusCode = 400;
-    res.send('<h2>400  Bad Request<br>Please fill out the email and password fields.</h2>')
+    res.send('<h2>400  Bad Request<br>Please fill out the email and password fields.</h2>');
   }
-})
+});
 
 //Logout handler
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id')
-  res.redirect("/urls")
-})
+  res.clearCookie('user_id');
+  res.redirect("/urls");
+});
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`)
+  console.log(`Example app listening on port ${PORT}!`);
 });
