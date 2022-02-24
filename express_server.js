@@ -32,8 +32,6 @@ app.get("/urls", (req, res) => {
     res.redirect("/login")
   }
   const usersURLs = userURLs(userID, urlDatabase);
-  console.log(users[userID])
-  console.log(usersURLs)
   const templateVars = { urls: usersURLs, user: users[userID] };
 
   res.render('urls_index', templateVars);
