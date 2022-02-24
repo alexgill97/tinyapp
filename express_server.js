@@ -11,10 +11,7 @@ app.use(cookieParser())
 
 app.set("view engine", "ejs");
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
+const urlDatabase = {};
 
 const users = {}
 
@@ -46,34 +43,44 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-
+//URL list page (home)
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies['user_id']] };
-  res.render("urls_index", templateVars);
+  const userID = req.cookies['user_id'];
+  const userURLs = urlsForUser(userID);
+  let templateVars = { urls: userURLs, user: users[userID] };
+  res.render('urls_index', templateVars);
 });
 
+//Page for creating new URL
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies['user_id']] }
   res.render("urls_new", templateVars)
 })
 
+//Page showing specific URL
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL,user: users[req.cookies['user_id']] };
   res.render("urls_show", templateVars);
 })
 
-// Redirect short URL to long...
+// Redirect short URL to long
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]
   res.redirect(longURL)
 })
 
-// Add new URL
+// Add new URL functionality
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString()
   urlDatabase[shortURL] = req.body.longURL
   res.redirect("/urls/new");
 });
+
+//Edit URL and redirect back
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id
+  urlDatabase[id] = req.body.updatedURL
+})
 
 //delete URL and redirect back
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -82,17 +89,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls")
 })
 
-//Edit URL and redirect back
-app.post("/urls/:id", (req, res) => {
-  const id = req.params.id
-  urlDatabase[id] = req.body.updatedURL
-})
-
-//Logout handler
-app.post("/logout", (req, res) => {
-  res.clearCookie('user_id')
-  res.redirect("/urls")
-})
+//GET login page
+app.get('/login', (req, res) => {
+  let templateVars = {user: users[req.cookies['user_id']]};
+  res.render('urls_login', templateVars);
+});
 
 //Registration page GET & Render
 app.get("/register", (req, res) => {
@@ -100,7 +101,24 @@ app.get("/register", (req, res) => {
   res.render("urls_registration", templateVars)
 })
 
-//Registration page POST handler
+// login handler
+app.post('/login', (req, res) => {
+  const user = findUserEmail(req.body.email, users);
+  if (user) {
+    if (req.body.password === user.password) {
+      res.cookie('user_id', user.userID);
+      res.redirect('/urls');
+    } else {
+      res.statusCode = 403;
+      res.send('<h2>403 Forbidden<br>You entered the wrong password.</h2>')
+    }
+  } else {
+    res.statusCode = 403;
+    res.send('<h2>403 Forbidden<br>This email address is not registered.</h2>')
+  }
+});
+
+//Registration handler
 app.post("/register", (req, res) => {
   if (req.body.email && req.body.password) {
     if (!findUserEmail(req.body.email, users)) {
@@ -122,28 +140,11 @@ app.post("/register", (req, res) => {
   }
 })
 
-//GET login page
-app.get('/login', (req, res) => {
-  let templateVars = {user: users[req.cookies['user_id']]};
-  res.render('urls_login', templateVars);
-});
-
-// login functionality
-app.post('/login', (req, res) => {
-  const user = findUserEmail(req.body.email, users);
-  if (user) {
-    if (req.body.password === user.password) {
-      res.cookie('user_id', user.userID);
-      res.redirect('/urls');
-    } else {
-      res.statusCode = 403;
-      res.send('<h2>403 Forbidden<br>You entered the wrong password.</h2>')
-    }
-  } else {
-    res.statusCode = 403;
-    res.send('<h2>403 Forbidden<br>This email address is not registered.</h2>')
-  }
-});
+//Logout handler
+app.post("/logout", (req, res) => {
+  res.clearCookie('user_id')
+  res.redirect("/urls")
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`)
