@@ -29,6 +29,14 @@ const generateRandomString = () => {
   return randomString;
 };
 
+const findUserEmail = (email, database) => {
+  for (const user in database) {
+    if (database[user].email === email) {
+      return database[user];
+    }
+  }
+  return undefined;
+};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -100,14 +108,24 @@ app.get("/register", (req, res) => {
 
 //Registration page POST handler
 app.post("/register", (req, res) => {
-  const userID = generateRandomString();
-  users[userID] = {
-    userID,
-    email: req.body.email,
-    password: req.body.password
+  if (req.body.email && req.body.password) {
+    if (!findUserEmail(req.body.email, users)) {
+      const userID = generateRandomString();
+      users[userID] = {
+        userID,
+        email: req.body.email,
+        password: req.body.password
+      }
+      res.cookie('user_id', userID);
+      res.redirect('/urls');
+    } else {
+      res.statusCode = 400;
+      res.send('<h2>400  Bad Request<br>Email already registered.</h2>')
+    }
+  } else {
+    res.statusCode = 400;
+    res.send('<h2>400  Bad Request<br>Please fill out the email and password fields.</h2>')
   }
-  res.cookie('user_id', userID);
-  res.redirect("/urls")
 })
 
 app.listen(PORT, () => {
