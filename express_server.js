@@ -16,6 +16,8 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {}
+
 const generateRandomString = () => {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
@@ -38,12 +40,12 @@ app.get("/urls.json", (req, res) => {
 
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies['user_id']] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] }
+  const templateVars = { user: users[req.cookies['user_id']] }
   res.render("urls_new", templateVars)
 })
 
@@ -94,6 +96,18 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = { username: req.cookies["username"] }
   res.render("urls_registration", templateVars)
+})
+
+//Registration page POST handler
+app.post("/register", (req, res) => {
+  const userID = generateRandomString();
+  users[userID] = {
+    userID,
+    email: req.body.email,
+    password: req.body.password
+  }
+  res.cookie('user_id', userID);
+  res.redirect("/urls")
 })
 
 app.listen(PORT, () => {
