@@ -13,9 +13,10 @@ app.set("view engine", "ejs");
 
 // Stores
 const urlDatabase = {};
+
 const users = {
-  user1: {
-    id: 'Adam',
+  user999999: {
+    id: 'user999999',
     email: 'a@a.com',
     password: bcrypt.hashSync('test', 10)
   }
@@ -39,6 +40,7 @@ app.get("/urls", (req, res) => {
     res.redirect("/login");
   }
   const usersURLs = userURLs(userID, urlDatabase);
+  console.log(usersURLs)
   const templateVars = { urls: usersURLs, user: users[userID] };
 
   res.render('urls_index', templateVars);
@@ -75,28 +77,32 @@ app.get("/u/:id", (req, res) => {
 
 // Add new URL functionality
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.cookies['user_id']
+  const userID = req.cookies["user_id"]
+  if (userID) {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = {
+      longURL: req.body.longURL,
+      id: req.cookies['user_id']
   };
-  res.redirect(`/urls/${shortURL}`);
+  }
+  res.redirect("/urls");
 });
 
 //Edit URL and redirect back
-app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  if (req.cookies['user_id'] === urlDatabase[id].userID) {
-    urlDatabase[id].longURL = req.body.updatedURL;
+app.post("/urls/:shortURL", (req, res) => {
+  const { shortURL } = req.params;
+  if (req.cookies['user_id'] === urlDatabase[shortURL].id) {
+    urlDatabase[userID].longURL = req.body.updatedURL;
+    return res.redirect("/urls")
   }
 
-  res.redirect(`/urls/${id}`);
+  res.redirect(`/login`);
 });
 
 //delete URL and redirect back
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-  if (req.cookies['user_id'] === urlDatabase[shortURL].userID) {
+  const { shortURL } = req.params;
+  if (req.cookies['user_id'] === urlDatabase[shortURL].id) {
     delete urlDatabase[shortURL];
   }
   res.redirect("/urls");
@@ -117,9 +123,10 @@ app.get("/register", (req, res) => {
 // login handler
 app.post('/login', (req, res) => {
   const user = userEmail(req.body.email, users);
+  console.log(user)
   if (user) {
     if (bcrypt.compareSync(req.body.password, user.password)) {
-      res.cookie('user_id', user.userID);
+      res.cookie('user_id', user.id);
       res.redirect('/urls');
     } else {
       res.statusCode = 403;
@@ -137,7 +144,7 @@ app.post("/register", (req, res) => {
     if (!userEmail(req.body.email, users)) {
       const userID = generateRandomString();
       users[userID] = {
-        userID,
+        id: userID,
         email: req.body.email,
         password: bcrypt.hashSync(req.body.password, 10)
       };
@@ -156,7 +163,7 @@ app.post("/register", (req, res) => {
 //Logout handler
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.listen(PORT, () => {

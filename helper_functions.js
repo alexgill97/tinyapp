@@ -18,14 +18,15 @@ const userEmail = (email, database) => {
   return false;
 };
 
-const userURLs = (email, database) => {
+const userURLs = (user, database) => {
   let urls = {};
 
   for (const shortURL in database) {
-    if (database[shortURL].userID === email) {
+    if (database[shortURL].id === user) {
       urls[shortURL] = database[shortURL];
     }
   }
+  console.log(urls)
   return urls;
 };
 
