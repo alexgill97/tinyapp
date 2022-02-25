@@ -2,8 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieSession = require("cookie-session")
-const bcrypt = require("bcryptjs")
+const cookieSession = require("cookie-session");
+const bcrypt = require("bcryptjs");
 const { generateRandomString, getUserByEmail, userURLs } = require("./helpers");
 
 // Middleware
@@ -12,7 +12,7 @@ app.set("view engine", "ejs");
 app.use(cookieSession({
   name: 'session',
   keys: ["user_ID"]
-}))
+}));
 
 // Stores
 const urlDatabase = {};
@@ -41,7 +41,7 @@ app.get("/urls", (req, res) => {
   const userID = req.session["user_ID"];
   if (users[userID]) {
     const usersURLs = userURLs(userID, urlDatabase);
-    console.log(usersURLs)
+    console.log(usersURLs);
     const templateVars = { urls: usersURLs, user: users[userID] };
   
     res.render('urls_index', templateVars);
@@ -81,13 +81,13 @@ app.get("/u/:id", (req, res) => {
 
 // Add new URL functionality
 app.post("/urls", (req, res) => {
-  const userID = req.session["user_ID"]
+  const userID = req.session["user_ID"];
   if (userID) {
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
       id: req.session["user_ID"]
-  };
+    };
   }
   res.redirect("/urls");
 });
@@ -96,8 +96,8 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
   if (req.session["user_ID"] === urlDatabase[shortURL].id) {
-    urlDatabase[userID].longURL = req.body.updatedURL;
-    return res.redirect("/urls")
+    urlDatabase[shortURL].longURL = req.body.updatedURL;
+    return res.redirect("/urls");
   }
 
   res.redirect(`/login`);
@@ -127,10 +127,10 @@ app.get("/register", (req, res) => {
 // login handler
 app.post('/login', (req, res) => {
   const user = getUserByEmail(req.body.email, users);
-  console.log(user)
+  console.log(user);
   if (user) {
     if (bcrypt.compareSync(req.body.password, user.password)) {
-      req.session['user_ID'] = user.id;
+      req.session['user_ID'] = user;
       res.redirect('/urls');
     } else {
       res.statusCode = 403;

@@ -2,7 +2,7 @@ const generateRandomString = () => {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
   
-  while (randomString.length <= 6) {
+  while (randomString.length < 6) {
     randomString += chars[Math.floor(Math.random() * chars.length)];
   }
 
@@ -12,10 +12,10 @@ const generateRandomString = () => {
 const getUserByEmail = (email, database) => {
   for (const user in database) {
     if (database[user].email === email) {
-      return database[user];
+      return database[user].id;
     }
   }
-  return false;
+  return undefined;
 };
 
 const userURLs = (user, database) => {
@@ -26,7 +26,6 @@ const userURLs = (user, database) => {
       urls[shortURL] = database[shortURL];
     }
   }
-  console.log(urls)
   return urls;
 };
 
