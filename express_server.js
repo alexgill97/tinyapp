@@ -38,13 +38,12 @@ app.get("/urls.json", (req, res) => {
 
 //URL list page (home)
 app.get("/urls", (req, res) => {
-  const userID = req.session["user_ID"];
+  const userID = req.session.user_ID;
   if (users[userID]) {
     const usersURLs = userURLs(userID, urlDatabase);
-    console.log(usersURLs);
     const templateVars = { urls: usersURLs, user: users[userID] };
   
-    res.render('urls_index', templateVars);
+    return res.render('urls_index', templateVars);
   }
   res.redirect("/login");
 
@@ -52,10 +51,10 @@ app.get("/urls", (req, res) => {
 
 //Page for creating new URL
 app.get("/urls/new", (req, res) => {
-  const userID = req.session["user_ID"];
+  const userID = req.session.user_ID;
   if (users[userID]) {
     let templateVars = {user: users[userID]};
-    res.render('urls_new', templateVars);
+    return res.render('urls_new', templateVars);
   }
   res.redirect("/login");
 });
@@ -72,7 +71,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id].longURL;
   if (longURL) {
-    res.redirect(`https://${longURL}`);
+    return res.redirect(`https://${longURL}`);
   } else {
     res.statusCode = 404;
     res.send('<h2>404 Not Found<br>This short URL does not exist.</h2>');
@@ -126,12 +125,12 @@ app.get("/register", (req, res) => {
 
 // login handler
 app.post('/login', (req, res) => {
-  const user = getUserByEmail(req.body.email, users);
-  console.log(user);
-  if (user) {
-    if (bcrypt.compareSync(req.body.password, user.password)) {
-      req.session['user_ID'] = user;
-      res.redirect('/urls');
+  const { email, password } = req.body;
+  const userID = getUserByEmail(email, users);
+  if (userID) {
+    if (bcrypt.compareSync(password, users[userID].password)) {
+      req.session.user_ID = userID;
+      return res.redirect('/urls');
     } else {
       res.statusCode = 403;
       res.send('<h2>403 Forbidden<br>You entered the wrong password.</h2>');
