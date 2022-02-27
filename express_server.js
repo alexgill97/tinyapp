@@ -70,8 +70,10 @@ app.get("/urls/:shortURL", (req, res) => {
 // Redirect short URL to long
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id].longURL;
-  if (longURL) {
-    return res.redirect(`https://${longURL}`);
+  if (longURL.startsWith("https")) {
+    res.redirect(longURL);
+  } else if (longURL) {
+    res.redirect(`https://${longURL}`);
   } else {
     res.statusCode = 404;
     res.send('<h2>404 Not Found<br>This short URL does not exist.</h2>');
