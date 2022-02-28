@@ -70,7 +70,7 @@ app.get("/urls/:shortURL", (req, res) => {
 // Redirect short URL to long
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id].longURL;
-  if (longURL.startsWith("https")) {
+  if (longURL.toLowerCase().startsWith("https")) {
     res.redirect(longURL);
   } else if (longURL) {
     res.redirect(`https://${longURL}`);
